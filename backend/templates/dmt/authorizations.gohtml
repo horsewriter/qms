@@ -1,0 +1,71 @@
+<div class="p-4">
+    <h2 class="text-xl font-bold mb-4">Authorizations</h2>
+    <form>
+        <div class="space-y-6">
+            <div class="border border-gray-200 rounded-md p-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Originator</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="originator_name" class="block text-sm font-medium text-gray-700">Name</label>
+                        <input type="text" name="originator_name" id="originator_name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="originator_date" class="block text-sm font-medium text-gray-700">Date</label>
+                        <input type="date" name="originator_date" id="originator_date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                    </div>
+                </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-md p-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Quality</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="quality_name" class="block text-sm font-medium text-gray-700">Name</label>
+                        <input type="text" name="quality_name" id="quality_name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="quality_date" class="block text-sm font-medium text-gray-700">Date</label>
+                        <input type="date" name="quality_date" id="quality_date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                    </div>
+                </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-md p-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Production</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="production_name" class="block text-sm font-medium text-gray-700">Name</label>
+                        <input type="text" name="production_name" id="production_name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="production_date" class="block text-sm font-medium text-gray-700">Date</label>
+                        <input type="date" name="production_date" id="production_date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                    </div>
+                </div>
+            </div>
+
+             <div class="border border-gray-200 rounded-md p-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Engineering</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="engineering_name" class="block text-sm font-medium text-gray-700">Name</label>
+                        <input type="text" name="engineering_name" id="engineering_name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="engineering_date" class="block text-sm font-medium text-gray-700">Date</label>
+                        <input type="date" name="engineering_date" id="engineering_date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 flex justify-end">
+             <button type="button" class="px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Cancel
+            </button>
+            <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                Save DMT
+            </button>
+        </div>
+    </form>
+</div>

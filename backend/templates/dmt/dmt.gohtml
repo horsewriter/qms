@@ -1,0 +1,27 @@
+{{define "content"}}
+<div class="p-4">
+    <h1 class="text-2xl font-bold mb-4">Defective Material Tag</h1>
+
+    <div class="border-b border-gray-200">
+        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+            <a href="#" hx-get="/dmt/general-information" hx-target="#dmt-content" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">General Information</a>
+            <a href="#" hx-get="/dmt/material-identification" hx-target="#dmt-content" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Material Identification</a>
+            <a href="#" hx-get="/dmt/defect-description" hx-target="#dmt-content" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Defect Description</a>
+            <a href="#" hx-get="/dmt/disposition" hx-target="#dmt-content" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Disposition</a>
+            <a href="#" hx-get="/dmt/costs" hx-target="#dmt-content" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Costs</a>
+            <a href="#" hx-get="/dmt/authorizations" hx-target="#dmt-content" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Authorizations</a>
+        </nav>
+    </div>
+
+    <div id="dmt-content" class="mt-4">
+        {{/* Content will be loaded here by HTMX */}}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        // Load General Information by default
+        document.querySelector('a[hx-get="/dmt/general-information"]').click();
+    });
+</script>
+{{end}}

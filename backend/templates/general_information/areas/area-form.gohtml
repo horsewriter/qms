@@ -1,0 +1,18 @@
+<div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+<div class="bg-white rounded-lg shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+    <form hx-post="{{if .Area.ID}}/general-information/areas/edit/{{.Area.ID}}{{else}}/general-information/areas/new{{end}}" hx-target="{{if .Area.ID}}#area-{{.Area.ID}}{{else}}#areas-table-body{{end}}" hx-swap="{{if .Area.ID}}outerHTML{{else}}beforeend{{end}}">
+        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">{{if .Area.ID}}Edit Area{{else}}Add Area{{end}}</h3>
+            <div class="mt-4 space-y-4">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                    <input type="text" name="name" id="name" value="{{.Area.Name}}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 sm:ml-3 sm:w-auto sm:text-sm">Save</button>
+            <button type="button" @click="document.getElementById('dialog').innerHTML = ''" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">Cancel</button>
+        </div>
+    </form>
+</div>

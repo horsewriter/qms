@@ -1,0 +1,84 @@
+
+        <div class="p-4">
+          <h2 class="text-lg font-bold mb-4 border-b border-teal-600 pb-2">
+            Main Menu
+          </h2>
+
+
+
+          <!-- General Information -->
+          <div class="mb-6">
+            <h3 class="text-sm font-semibold mb-2 text-teal-200">
+              General Information
+            </h3>
+            <button
+              class="w-full text-left px-3 py-2 hover:bg-teal-600 rounded transition"
+              hx-get="/api/general/info"
+              hx-target="#main-content"
+              onclick="showGeneralInfo()"
+            >
+              General Information
+            </button>
+          </div>
+
+          <!-- Training & Qualification -->
+          <div class="mb-6">
+            <h3 class="text-sm font-semibold mb-2 text-teal-200">
+              Training & Qualification
+            </h3>
+            <button
+              class="w-full text-left px-3 py-2 hover:bg-teal-600 rounded transition"
+              onclick="showTrainingMenu()"
+            >
+              Training and Qualification
+            </button>
+          </div>
+
+          <!-- Calibration -->
+          <div class="mb-6">
+            <h3 class="text-sm font-semibold mb-2 text-teal-200">
+              Calibration
+            </h3>
+            <button
+              class="w-full text-left px-3 py-2 hover:bg-teal-600 rounded transition"
+              onclick="showCalibrationMenu()"
+            >
+              Calibration
+            </button>
+          </div>
+
+          <!-- Tool Maintenance -->
+          <div class="mb-6">
+            <h3 class="text-sm font-semibold mb-2 text-teal-200">
+              Tool Management
+            </h3>
+            <button
+              class="w-full text-left px-3 py-2 hover:bg-teal-600 rounded transition"
+              onclick="showToolMenu()"
+            >
+              Tool Maintenance
+            </button>
+          </div>
+
+          <!-- Inspection Tools -->
+          <div class="mb-6">
+            <h3 class="text-sm font-semibold mb-2 text-teal-200">Inspection</h3>
+            <button
+              class="w-full text-left px-3 py-2 hover:bg-teal-600 rounded transition"
+              onclick="showInspectionMenu()"
+            >
+              Defective Material Tag
+            </button>
+          </div>
+
+          <!-- Exit -->
+          <div class="mb-6">
+            <button
+              class="w-full text-left px-3 py-2 hover:bg-teal-600 rounded transition text-red-300"
+              onclick="if(confirm('Exit application?')) window.close()"
+            >
+              Exit This Application
+            </button>
+          </div>
+        </div>
+     

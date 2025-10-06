@@ -1,0 +1,27 @@
+<div class="p-4">
+    <h2 class="text-xl font-bold mb-4">Costs</h2>
+    <form>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label for="labor_hours" class="block text-sm font-medium text-gray-700">Labor Hours</label>
+                <input type="number" name="labor_hours" id="labor_hours" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+            </div>
+             <div>
+                <label for="labor_cost" class="block text-sm font-medium text-gray-700">Labor Cost</label>
+                <input type="number" name="labor_cost" id="labor_cost" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm bg-gray-100">
+            </div>
+            <div>
+                <label for="material_cost" class="block text-sm font-medium text-gray-700">Material Cost</label>
+                <input type="number" name="material_cost" id="material_cost" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+            </div>
+            <div>
+                <label for="outside_service_cost" class="block text-sm font-medium text-gray-700">Outside Service Cost</label>
+                <input type="number" name="outside_service_cost" id="outside_service_cost" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+            </div>
+            <div class="col-span-2">
+                 <label for="total_cost" class="block text-sm font-medium text-gray-700">Total Cost</label>
+                <input type="number" name="total_cost" id="total_cost" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm bg-gray-100">
+            </div>
+        </div>
+    </form>
+</div>
