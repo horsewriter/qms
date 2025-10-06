@@ -1,10 +1,13 @@
 package main
 
 import (
+	"log"
 	"net/http"
+	"os"
 
 	"quality-system/internal/database"
 	"quality-system/internal/handlers"
+	"quality-system/internal/utils"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -12,6 +15,18 @@ import (
 
 func main() {
 	db := database.NewDB()
+
+	if len(os.Args) > 1 && os.Args[1] == "load-csv" {
+		log.Println("Loading CSV data...")
+		if err := utils.LoadCustomersFromCSV(db, "Customer.csv"); err != nil {
+			log.Printf("Error loading customers: %v", err)
+		}
+		if err := utils.LoadPartNumbersFromCSV(db, "Part Number list.csv"); err != nil {
+			log.Printf("Error loading part numbers: %v", err)
+		}
+		log.Println("CSV data loaded successfully")
+		return
+	}
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)

@@ -1,18 +1,21 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
-	"quality-system/internal/database"
-	"quality-system/models"
-	"strconv"
 	"text/template"
 
+	"quality-system/internal/database"
+	"quality-system/internal/models"
+
 	"github.com/go-chi/chi/v5"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func GetPartNumbers(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.GetPartNumbers()
+		ctx := context.Background()
+		partNumbers, err := db.GetPartNumbers(ctx)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -24,7 +27,7 @@ func GetPartNumbers(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		tmpl.Execute(w, map[string]interface{}{"PartNumbers": rows})
+		tmpl.Execute(w, map[string]interface{}{"PartNumbers": partNumbers})
 	}
 }
 
@@ -42,14 +45,19 @@ func NewPartNumber(db *database.DB) http.HandlerFunc {
 
 func CreatePartNumber(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.Background()
 		number := r.FormValue("number")
-		newPartNumber := models.PartNumber{Number: number}
+		customer := r.FormValue("customer")
+		customerID := r.FormValue("customerID")
+		newPartNumber := models.PartNumber{Number: number, Customer: customer, CustomerID: customerID}
 
-		id, err := db.CreatePartNumber(newPartNumber)
+		result, err := db.CreatePartNumber(ctx, newPartNumber)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		newPartNumber.ID = result.InsertedID.(primitive.ObjectID)
 
 		tmpl, err := template.ParseFiles("backend/templates/general_information/part-numbers/part-number-row.gohtml")
 		if err != nil {
@@ -57,17 +65,35 @@ func CreatePartNumber(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		tmpl.Execute(w, models.PartNumber{ID: int(id), Number: number})
+		tmpl.Execute(w, newPartNumber)
 	}
 }
 
 func EditPartNumber(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+		ctx := context.Background()
+		id, err := primitive.ObjectIDFromHex(chi.URLParam(r, "id"))
+		if err != nil {
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
 
-		partNumber, err := db.GetPartNumberByID(id)
+		partNumbers, err := db.GetPartNumbers(ctx)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var partNumber *models.PartNumber
+		for _, p := range partNumbers {
+			if p.ID == id {
+				partNumber = &p
+				break
+			}
+		}
+
+		if partNumber == nil {
+			http.Error(w, "Part number not found", http.StatusNotFound)
 			return
 		}
 
@@ -83,11 +109,19 @@ func EditPartNumber(db *database.DB) http.HandlerFunc {
 
 func UpdatePartNumber(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-		number := r.FormValue("number")
+		ctx := context.Background()
+		id, err := primitive.ObjectIDFromHex(chi.URLParam(r, "id"))
+		if err != nil {
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
 
-		updatedPartNumber := models.PartNumber{ID: id, Number: number}
-		err := db.UpdatePartNumber(updatedPartNumber)
+		number := r.FormValue("number")
+		customer := r.FormValue("customer")
+		customerID := r.FormValue("customerID")
+
+		updatedPartNumber := models.PartNumber{ID: id, Number: number, Customer: customer, CustomerID: customerID}
+		_, err = db.UpdatePartNumber(ctx, id, updatedPartNumber)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -105,11 +139,17 @@ func UpdatePartNumber(db *database.DB) http.HandlerFunc {
 
 func DeletePartNumber(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+		ctx := context.Background()
+		id, err := primitive.ObjectIDFromHex(chi.URLParam(r, "id"))
+		if err != nil {
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
 
-		err := db.DeletePartNumber(id)
+		_, err = db.DeletePartNumber(ctx, id)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		w.Write([]byte(""))
@@ -118,12 +158,20 @@ func DeletePartNumber(db *database.DB) http.HandlerFunc {
 
 func SearchPartNumbers(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.Background()
 		search := r.FormValue("search")
 
-		rows, err := db.SearchPartNumbers(search)
+		partNumbers, err := db.GetPartNumbers(ctx)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+
+		var filtered []models.PartNumber
+		for _, p := range partNumbers {
+			if search == "" || contains(p.Number, search) || contains(p.Customer, search) {
+				filtered = append(filtered, p)
+			}
 		}
 
 		tmpl, err := template.ParseFiles("backend/templates/general_information/part-numbers/part-number-row.gohtml")
@@ -132,7 +180,7 @@ func SearchPartNumbers(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		for _, partNumber := range rows {
+		for _, partNumber := range filtered {
 			tmpl.Execute(w, partNumber)
 		}
 	}

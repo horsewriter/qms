@@ -1,18 +1,21 @@
-butpackage handlers
+package handlers
 
 import (
+	"context"
 	"net/http"
-	"quality-system/internal/database"
-	"quality-system/models"
-	"strconv"
 	"text/template"
 
+	"quality-system/internal/database"
+	"quality-system/internal/models"
+
 	"github.com/go-chi/chi/v5"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func GetAreas(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.GetAreas()
+		ctx := context.Background()
+		areas, err := db.GetAreas(ctx)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -24,7 +27,7 @@ func GetAreas(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		tmpl.Execute(w, map[string]interface{}{"Areas": rows})
+		tmpl.Execute(w, map[string]interface{}{"Areas": areas})
 	}
 }
 
@@ -42,14 +45,17 @@ func NewArea(db *database.DB) http.HandlerFunc {
 
 func CreateArea(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.Background()
 		name := r.FormValue("name")
 		newArea := models.Area{Name: name}
 
-		id, err := db.CreateArea(newArea)
+		result, err := db.CreateArea(ctx, newArea)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		newArea.ID = result.InsertedID.(primitive.ObjectID)
 
 		tmpl, err := template.ParseFiles("backend/templates/general_information/areas/area-row.gohtml")
 		if err != nil {
@@ -57,17 +63,35 @@ func CreateArea(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		tmpl.Execute(w, models.Area{ID: int(id), Name: name})
+		tmpl.Execute(w, newArea)
 	}
 }
 
 func EditArea(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+		ctx := context.Background()
+		id, err := primitive.ObjectIDFromHex(chi.URLParam(r, "id"))
+		if err != nil {
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
 
-		area, err := db.GetAreaByID(id)
+		areas, err := db.GetAreas(ctx)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var area *models.Area
+		for _, a := range areas {
+			if a.ID == id {
+				area = &a
+				break
+			}
+		}
+
+		if area == nil {
+			http.Error(w, "Area not found", http.StatusNotFound)
 			return
 		}
 
@@ -83,11 +107,17 @@ func EditArea(db *database.DB) http.HandlerFunc {
 
 func UpdateArea(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+		ctx := context.Background()
+		id, err := primitive.ObjectIDFromHex(chi.URLParam(r, "id"))
+		if err != nil {
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
+
 		name := r.FormValue("name")
 
 		updatedArea := models.Area{ID: id, Name: name}
-		err := db.UpdateArea(updatedArea)
+		_, err = db.UpdateArea(ctx, id, updatedArea)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -105,11 +135,17 @@ func UpdateArea(db *database.DB) http.HandlerFunc {
 
 func DeleteArea(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+		ctx := context.Background()
+		id, err := primitive.ObjectIDFromHex(chi.URLParam(r, "id"))
+		if err != nil {
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
 
-		err := db.DeleteArea(id)
+		_, err = db.DeleteArea(ctx, id)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		w.Write([]byte(""))
@@ -118,12 +154,20 @@ func DeleteArea(db *database.DB) http.HandlerFunc {
 
 func SearchAreas(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.Background()
 		search := r.FormValue("search")
 
-		rows, err := db.SearchAreas(search)
+		areas, err := db.GetAreas(ctx)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+
+		var filtered []models.Area
+		for _, a := range areas {
+			if search == "" || contains(a.Name, search) {
+				filtered = append(filtered, a)
+			}
 		}
 
 		tmpl, err := template.ParseFiles("backend/templates/general_information/areas/area-row.gohtml")
@@ -132,7 +176,7 @@ func SearchAreas(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		for _, area := range rows {
+		for _, area := range filtered {
 			tmpl.Execute(w, area)
 		}
 	}

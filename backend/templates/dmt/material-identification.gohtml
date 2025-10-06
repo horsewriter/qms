@@ -5,7 +5,10 @@
             <div>
                 <label for="part_number" class="block text-sm font-medium text-gray-700">Part Number</label>
                 <select id="part_number" name="part_number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
-                    <!-- Options will be populated from the database -->
+                    <option value="">Select Part Number</option>
+                    {{range .PartNumbers}}
+                    <option value="{{.ID.Hex}}">{{.Number}}</option>
+                    {{end}}
                 </select>
             </div>
             <div>

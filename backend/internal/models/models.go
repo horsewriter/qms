@@ -34,3 +34,9 @@ type PartNumber struct {
 	Customer   string             `bson:"customer" json:"customer"`
 	CustomerID string             `bson:"customerID" json:"customerID"` // New field for Customer ID
 }
+
+type Customer struct {
+	ID         primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	CustomerID string             `bson:"customerID" json:"customerID"`
+	Name       string             `bson:"name" json:"name"`
+}

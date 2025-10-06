@@ -9,6 +9,25 @@ import (
 
 func DMT(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		customers, err := db.GetCustomers(ctx)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		partNumbers, err := db.GetPartNumbers(ctx)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		data := map[string]interface{}{
+			"Customers":   customers,
+			"PartNumbers": partNumbers,
+		}
+
 		tmpl, err := template.ParseFiles(
 			"backend/templates/index.gohtml",
 			"backend/templates/menu.gohtml",
@@ -26,6 +45,6 @@ func DMT(db *database.DB) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		tmpl.ExecuteTemplate(w, "index", nil)
+		tmpl.ExecuteTemplate(w, "index", data)
 	}
 }

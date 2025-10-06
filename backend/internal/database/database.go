@@ -18,7 +18,7 @@ type DB struct {
 
 // NewDB creates a new DB instance and connects to MongoDB.
 func NewDB() *DB {
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb://localhost:27017"))
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb+srv://amb:fGmFGida4dLESlKm@impro.d9jwuka.mongodb.net/?retryWrites=true&w=majority&appName=Impro"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -53,6 +53,12 @@ func (db *DB) CreateEmployee(ctx context.Context, employee models.Employee) (*mo
 	return collection.InsertOne(ctx, employee)
 }
 
+func (db *DB) UpdateEmployee(ctx context.Context, id primitive.ObjectID, employee models.Employee) (*mongo.UpdateResult, error) {
+	collection := db.getCollection("employees")
+	update := bson.M{"$set": bson.M{"name": employee.Name, "number": employee.Number}}
+	return collection.UpdateOne(ctx, bson.M{"_id": id}, update)
+}
+
 func (db *DB) DeleteEmployee(ctx context.Context, id primitive.ObjectID) (*mongo.DeleteResult, error) {
 	collection := db.getCollection("employees")
 	return collection.DeleteOne(ctx, bson.M{"_id": id})
@@ -79,6 +85,12 @@ func (db *DB) GetAreas(ctx context.Context) ([]models.Area, error) {
 func (db *DB) CreateArea(ctx context.Context, area models.Area) (*mongo.InsertOneResult, error) {
 	collection := db.getCollection("areas")
 	return collection.InsertOne(ctx, area)
+}
+
+func (db *DB) UpdateArea(ctx context.Context, id primitive.ObjectID, area models.Area) (*mongo.UpdateResult, error) {
+	collection := db.getCollection("areas")
+	update := bson.M{"$set": bson.M{"name": area.Name}}
+	return collection.UpdateOne(ctx, bson.M{"_id": id}, update)
 }
 
 func (db *DB) DeleteArea(ctx context.Context, id primitive.ObjectID) (*mongo.DeleteResult, error) {
@@ -109,6 +121,12 @@ func (db *DB) CreateLevel(ctx context.Context, level models.Level) (*mongo.Inser
 	return collection.InsertOne(ctx, level)
 }
 
+func (db *DB) UpdateLevel(ctx context.Context, id primitive.ObjectID, level models.Level) (*mongo.UpdateResult, error) {
+	collection := db.getCollection("levels")
+	update := bson.M{"$set": bson.M{"name": level.Name}}
+	return collection.UpdateOne(ctx, bson.M{"_id": id}, update)
+}
+
 func (db *DB) DeleteLevel(ctx context.Context, id primitive.ObjectID) (*mongo.DeleteResult, error) {
 	collection := db.getCollection("levels")
 	return collection.DeleteOne(ctx, bson.M{"_id": id})
@@ -135,6 +153,12 @@ func (db *DB) GetPartNumbers(ctx context.Context) ([]models.PartNumber, error) {
 func (db *DB) CreatePartNumber(ctx context.Context, partNumber models.PartNumber) (*mongo.InsertOneResult, error) {
 	collection := db.getCollection("part_numbers")
 	return collection.InsertOne(ctx, partNumber)
+}
+
+func (db *DB) UpdatePartNumber(ctx context.Context, id primitive.ObjectID, partNumber models.PartNumber) (*mongo.UpdateResult, error) {
+	collection := db.getCollection("part_numbers")
+	update := bson.M{"$set": bson.M{"number": partNumber.Number, "customer": partNumber.Customer, "customerID": partNumber.CustomerID}}
+	return collection.UpdateOne(ctx, bson.M{"_id": id}, update)
 }
 
 func (db *DB) DeletePartNumber(ctx context.Context, id primitive.ObjectID) (*mongo.DeleteResult, error) {

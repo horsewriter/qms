@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 	"text/template"
 
 	"quality-system/internal/database"
@@ -17,4 +18,8 @@ func Index(db *database.DB) http.HandlerFunc {
 
 		tmpl.Execute(w, nil)
 	}
+}
+
+func contains(str, substr string) bool {
+	return strings.Contains(strings.ToLower(str), strings.ToLower(substr))
 }

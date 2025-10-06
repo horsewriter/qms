@@ -1,18 +1,21 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
-	"quality-system/internal/database"
-	"quality-system/models"
-	"strconv"
 	"text/template"
 
+	"quality-system/internal/database"
+	"quality-system/internal/models"
+
 	"github.com/go-chi/chi/v5"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func GetLevels(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.GetLevels()
+		ctx := context.Background()
+		levels, err := db.GetLevels(ctx)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -24,7 +27,7 @@ func GetLevels(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		tmpl.Execute(w, map[string]interface{}{"Levels": rows})
+		tmpl.Execute(w, map[string]interface{}{"Levels": levels})
 	}
 }
 
@@ -42,14 +45,17 @@ func NewLevel(db *database.DB) http.HandlerFunc {
 
 func CreateLevel(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.Background()
 		name := r.FormValue("name")
 		newLevel := models.Level{Name: name}
 
-		id, err := db.CreateLevel(newLevel)
+		result, err := db.CreateLevel(ctx, newLevel)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		newLevel.ID = result.InsertedID.(primitive.ObjectID)
 
 		tmpl, err := template.ParseFiles("backend/templates/general_information/levels/level-row.gohtml")
 		if err != nil {
@@ -57,17 +63,35 @@ func CreateLevel(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		tmpl.Execute(w, models.Level{ID: int(id), Name: name})
+		tmpl.Execute(w, newLevel)
 	}
 }
 
 func EditLevel(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+		ctx := context.Background()
+		id, err := primitive.ObjectIDFromHex(chi.URLParam(r, "id"))
+		if err != nil {
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
 
-		level, err := db.GetLevelByID(id)
+		levels, err := db.GetLevels(ctx)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var level *models.Level
+		for _, l := range levels {
+			if l.ID == id {
+				level = &l
+				break
+			}
+		}
+
+		if level == nil {
+			http.Error(w, "Level not found", http.StatusNotFound)
 			return
 		}
 
@@ -83,11 +107,17 @@ func EditLevel(db *database.DB) http.HandlerFunc {
 
 func UpdateLevel(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+		ctx := context.Background()
+		id, err := primitive.ObjectIDFromHex(chi.URLParam(r, "id"))
+		if err != nil {
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
+
 		name := r.FormValue("name")
 
 		updatedLevel := models.Level{ID: id, Name: name}
-		err := db.UpdateLevel(updatedLevel)
+		_, err = db.UpdateLevel(ctx, id, updatedLevel)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -105,11 +135,17 @@ func UpdateLevel(db *database.DB) http.HandlerFunc {
 
 func DeleteLevel(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+		ctx := context.Background()
+		id, err := primitive.ObjectIDFromHex(chi.URLParam(r, "id"))
+		if err != nil {
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
 
-		err := db.DeleteLevel(id)
+		_, err = db.DeleteLevel(ctx, id)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		w.Write([]byte(""))
@@ -118,12 +154,20 @@ func DeleteLevel(db *database.DB) http.HandlerFunc {
 
 func SearchLevels(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.Background()
 		search := r.FormValue("search")
 
-		rows, err := db.SearchLevels(search)
+		levels, err := db.GetLevels(ctx)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+
+		var filtered []models.Level
+		for _, l := range levels {
+			if search == "" || contains(l.Name, search) {
+				filtered = append(filtered, l)
+			}
 		}
 
 		tmpl, err := template.ParseFiles("backend/templates/general_information/levels/level-row.gohtml")
@@ -132,7 +176,7 @@ func SearchLevels(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		for _, level := range rows {
+		for _, level := range filtered {
 			tmpl.Execute(w, level)
 		}
 	}

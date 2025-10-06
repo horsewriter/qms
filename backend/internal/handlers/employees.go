@@ -1,18 +1,21 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
-	"quality-system/internal/database"
-	"quality-system/models"
-	"strconv"
 	"text/template"
 
+	"quality-system/internal/database"
+	"quality-system/internal/models"
+
 	"github.com/go-chi/chi/v5"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func GetEmployees(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.GetEmployees()
+		ctx := context.Background()
+		employees, err := db.GetEmployees(ctx)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -24,7 +27,7 @@ func GetEmployees(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		tmpl.Execute(w, map[string]interface{}{"Employees": rows})
+		tmpl.Execute(w, map[string]interface{}{"Employees": employees})
 	}
 }
 
@@ -42,15 +45,18 @@ func NewEmployee(db *database.DB) http.HandlerFunc {
 
 func CreateEmployee(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.Background()
 		name := r.FormValue("name")
-		role := r.FormValue("role")
-		newEmployee := models.Employee{Name: name, Role: role}
+		number := r.FormValue("number")
+		newEmployee := models.Employee{Name: name, Number: number}
 
-		id, err := db.CreateEmployee(newEmployee)
+		result, err := db.CreateEmployee(ctx, newEmployee)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		newEmployee.ID = result.InsertedID.(primitive.ObjectID)
 
 		tmpl, err := template.ParseFiles("backend/templates/general_information/employees/employee-row.gohtml")
 		if err != nil {
@@ -58,17 +64,35 @@ func CreateEmployee(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		tmpl.Execute(w, models.Employee{ID: int(id), Name: name, Role: role})
+		tmpl.Execute(w, newEmployee)
 	}
 }
 
 func EditEmployee(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+		ctx := context.Background()
+		id, err := primitive.ObjectIDFromHex(chi.URLParam(r, "id"))
+		if err != nil {
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
 
-		employee, err := db.GetEmployeeByID(id)
+		employees, err := db.GetEmployees(ctx)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var employee *models.Employee
+		for _, e := range employees {
+			if e.ID == id {
+				employee = &e
+				break
+			}
+		}
+
+		if employee == nil {
+			http.Error(w, "Employee not found", http.StatusNotFound)
 			return
 		}
 
@@ -84,12 +108,18 @@ func EditEmployee(db *database.DB) http.HandlerFunc {
 
 func UpdateEmployee(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-		name := r.FormValue("name")
-		role := r.FormValue("role")
+		ctx := context.Background()
+		id, err := primitive.ObjectIDFromHex(chi.URLParam(r, "id"))
+		if err != nil {
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
 
-		updatedEmployee := models.Employee{ID: id, Name: name, Role: role}
-		err := db.UpdateEmployee(updatedEmployee)
+		name := r.FormValue("name")
+		number := r.FormValue("number")
+
+		updatedEmployee := models.Employee{ID: id, Name: name, Number: number}
+		_, err = db.UpdateEmployee(ctx, id, updatedEmployee)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -107,11 +137,17 @@ func UpdateEmployee(db *database.DB) http.HandlerFunc {
 
 func DeleteEmployee(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+		ctx := context.Background()
+		id, err := primitive.ObjectIDFromHex(chi.URLParam(r, "id"))
+		if err != nil {
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
 
-		err := db.DeleteEmployee(id)
+		_, err = db.DeleteEmployee(ctx, id)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		w.Write([]byte(""))
@@ -120,12 +156,20 @@ func DeleteEmployee(db *database.DB) http.HandlerFunc {
 
 func SearchEmployees(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.Background()
 		search := r.FormValue("search")
 
-		rows, err := db.SearchEmployees(search)
+		employees, err := db.GetEmployees(ctx)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+
+		var filtered []models.Employee
+		for _, e := range employees {
+			if search == "" || contains(e.Name, search) || contains(e.Number, search) {
+				filtered = append(filtered, e)
+			}
 		}
 
 		tmpl, err := template.ParseFiles("backend/templates/general_information/employees/employee-row.gohtml")
@@ -134,7 +178,7 @@ func SearchEmployees(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		for _, employee := range rows {
+		for _, employee := range filtered {
 			tmpl.Execute(w, employee)
 		}
 	}
